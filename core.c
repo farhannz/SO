@@ -96,3 +96,7 @@ void DRAW()
   // system("clear");
   drawField(12,8);
 }
+void UPDATE()
+{
+  printf("2+2\n");
+}
