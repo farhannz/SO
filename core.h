@@ -38,16 +38,20 @@
 #define KEY_X 23
 #define KEY_Y 24
 #define KEY_Z 25
+#define KEY_NONE -99999
 
 //Keyboard state apakah pressed, repeat
 #define KEY_PRESSED 0
 #define KEY_REPEATED 1
 
 // Besar dari windows
-#define W 128
-#define H 128
+#define W 50
+#define H 15
 
+pthread_mutex_t mutex;
 
+int posX;
+int posY;
 // Struct
 static struct termios old, current;
 struct inputEvent
@@ -61,12 +65,19 @@ struct eventArg {
     int evCodes;
     struct inputEvent *event;
 };
+
+struct winScreen {
+    int width, height;
+    char *screen;
+};
+
 void initTermios(void);
 void resetTermios(void);
 void EventHandler(int evCodes, struct inputEvent * event);
 void *GetInputFromUser(void * args);
-void UPDATE();
-void DRAW();
+void UPDATE(struct inputEvent *event, struct winScreen *screen);
+void DRAW(struct winScreen screen);
+void createScreen(int height, int width, struct winScreen * screen);
 char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
 int keyHit();           // check apakah keyboard ditekan atau tidak
