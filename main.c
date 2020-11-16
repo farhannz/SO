@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     // {
         system("clear");
         // printf("FPS : %0.2lf\n",frames/delta);
+        printf("TEST USER INPUT\n");
         UPDATE(&ev,&screen);
         DRAW(screen);
             // frames = 0;
