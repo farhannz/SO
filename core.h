@@ -4,11 +4,13 @@
 #include <unistd.h>
 #include <termios.h>
 #include <pthread.h>
-#include <sys/ioctl.h>
-#include <string.h>
-#include <wchar.h>
+// #include <sys/ioctl.h>
+// #include <string.h>
+// #include <wchar.h>
 // List dari evCodes yang merupakan event codes yang akan dipakai
 #define EV_KEY 0
+#define clear() printf("\033[H\033[J")
+#define gotoxy(x,y) printf("\033[%d;%dH", (y), (x))
 
 
 // List dari keyboard codes input
@@ -66,16 +68,29 @@ struct eventArg {
     struct inputEvent *event;
 };
 
+struct updateArg {
+    struct inputEvent *event;
+    struct winScreen *screen;
+    struct player *player;
+};
+
 struct winScreen {
     int width, height;
     char *screen;
+};
+
+struct player {
+    int posX;
+    int posY;
+    int code;
 };
 
 void initTermios(void);
 void resetTermios(void);
 void EventHandler(int evCodes, struct inputEvent * event);
 void *GetInputFromUser(void * args);
-void UPDATE(struct inputEvent *event, struct winScreen *screen);
+// void UPDATE(struct inputEvent *event, struct winScreen *screen, struct player *player);
+void *UPDATE(void *args);
 void DRAW(struct winScreen screen);
 void createScreen(int height, int width, struct winScreen * screen);
 char inputKey(void);      // Mengembalikan character dari keyboard input

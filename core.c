@@ -32,12 +32,14 @@ void * GetInputFromUser(void *args)
 {
   struct eventArg *evArg = args;
   // Memanggil event handler untuk Input User
-  while(1)
+  pthread_mutex_lock(&mutex);
+  while(1 && evArg->event->code != KEY_Q)
   {
-    pthread_mutex_lock(&mutex);
     EventHandler(evArg->evCodes,evArg->event);
-    pthread_mutex_unlock(&mutex);
   }
+  pthread_mutex_unlock(&mutex);
+  // int x;
+  // pthread_exit(&x);
 }
 
 void createScreen(int height, int width, struct winScreen *screen)
@@ -45,8 +47,22 @@ void createScreen(int height, int width, struct winScreen *screen)
   screen->width = width;
   screen->height = height;
   screen->screen = (char*)malloc(screen->width * screen->height * sizeof(char));
-  int i;
-  for(i = 0;i<screen->width * screen->height;++i) screen->screen[i] = '-';
+  int i,j;
+  // for(i = 0;i<screen->width * screen->height;++i) screen->screen[i] = '-';
+  for(i = 0;i<screen->height;++i)
+  {
+    for(j = 0;j<screen->width;++j)
+    {
+      if(j == screen->width-1)
+      {
+        screen->screen[i * screen->width + j] = '\n';
+      }
+      else
+      {
+        screen->screen[i * screen->width + j] = '-';
+      }
+    }
+  }
 }
 
 
@@ -108,44 +124,76 @@ void DRAW(struct winScreen screen)
 {
   // system("clear");
   
-  int i ,j;
-  for(i = 0; i<screen.height;++i)
-  {
-    for(j = 0; j<screen.width;++j)
-    {
-      printf("%c",screen.screen[i * screen.width + j]);
-    }
-    printf("\n");
-  }
-  fflush(stdout);
+  // int i ,j;
+  // for(i = 0; i<screen.height;++i)
+  // {
+  //   for(j = 0; j<screen.width;++j)
+  //   {
+  //     printf("%c",screen.screen[i * screen.width + j]);
+  //   }
+  //   printf("\n");
+  // }
+  fprintf(stderr,"%s",screen.screen);
+  fflush(stderr);
 }
-void UPDATE(struct inputEvent *event,struct winScreen *screen)
+void* UPDATE(void *args)
 {
-  int currentX = posX % W;
-  int currentY = posY % H;
-  screen->screen[currentY * W + currentX] = '-';
-  if(event->code == KEY_W)
+  struct updateArg *arg = args;
+  int currentX = arg->player->posX % W;
+  int currentY = arg->player->posY % H;
+  arg->screen->screen[currentY * W + currentX] = '-';
+  if((arg->player->code == 1 && arg->event->code == KEY_W) || ((arg->player->code == 2 && arg->event->code == KEY_I)))
   {
-    posY--;
+    arg->player->posY--;
   }
-  if(event->code == KEY_A)
+  if((arg->player->code == 1 && arg->event->code == KEY_A) || ((arg->player->code == 2 && arg->event->code == KEY_J)))
   {
-    posX--;
+    arg->player->posX--;
   }
-  if(event->code == KEY_S)
+  if((arg->player->code == 1 && arg->event->code == KEY_S) || ((arg->player->code == 2 && arg->event->code == KEY_K)))
   {
-    posY++;
+    arg->player->posY++;
   }
-  if(event->code == KEY_D)
+  if((arg->player->code == 1 && arg->event->code == KEY_D) || ((arg->player->code == 2 && arg->event->code == KEY_L)))
   {
-    posX++;
+    arg->player->posX++;
   }
-  if(event->code == KEY_Q)
+  if(arg->event->code == KEY_Q)
   {
-    return;
+    return NULL;
   }
-  currentX = posX % W;
-  currentY = posY % H;
-  screen->screen[currentY * W + currentX] = '#';
-  event->code = KEY_NONE;
+  currentX = arg->player->posX % W;
+  currentY = arg->player->posY % H;
+  arg->screen->screen[currentY * W + currentX] = '#';
+  arg->event->code = KEY_NONE;
 }
+// void UPDATE(struct inputEvent *event,struct winScreen *screen, struct player *player)
+// {
+//   int currentX = player->posX % W;
+//   int currentY = player->posY % H;
+//   screen->screen[currentY * W + currentX] = '-';
+//   if((player->code == 1 && event->code == KEY_W) || ((player->code == 2 && event->code == KEY_I)))
+//   {
+//     player->posY--;
+//   }
+//   if((player->code == 1 && event->code == KEY_A) || ((player->code == 2 && event->code == KEY_J)))
+//   {
+//     player->posX--;
+//   }
+//   if((player->code == 1 && event->code == KEY_S) || ((player->code == 2 && event->code == KEY_K)))
+//   {
+//     player->posY++;
+//   }
+//   if((player->code == 1 && event->code == KEY_D) || ((player->code == 2 && event->code == KEY_L)))
+//   {
+//     player->posX++;
+//   }
+//   if(event->code == KEY_Q)
+//   {
+//     return;
+//   }
+//   currentX = player->posX % W;
+//   currentY = player->posY % H;
+//   screen->screen[currentY * W + currentX] = '#';
+//   event->code = KEY_NONE;
+// }
