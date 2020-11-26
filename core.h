@@ -1,9 +1,13 @@
+#ifndef CORE_H
+#define CORE_H
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
 #include <pthread.h>
+#include "queue.h"
 // #include <sys/ioctl.h>
 // #include <string.h>
 // #include <wchar.h>
@@ -71,7 +75,7 @@ struct eventArg {
 struct updateArg {
     struct inputEvent *event;
     struct winScreen *screen;
-    struct player *player;
+    struct player *p1,*p2;
 };
 
 struct winScreen {
@@ -84,7 +88,9 @@ struct player {
     int posY;
     int code;
 };
-
+//Input buffer
+queue keyBuffer;
+//
 void initTermios(void);
 void resetTermios(void);
 void EventHandler(int evCodes, struct inputEvent * event);
@@ -97,4 +103,4 @@ char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
 int keyHit();           // check apakah keyboard ditekan atau tidak
 void drawField(int rows,int columns);
-struct player p1,p2;
+#endif // !CORE_H

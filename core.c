@@ -76,6 +76,7 @@ void EventHandler(int evCodes, struct inputEvent *event)
       key = inputKey();
       event->type = EV_KEY;
       event->code = (key >= 97 && key <=127) ? key - 97 : key - 65;
+      enqueue(event->code,&keyBuffer);
       event->val  = 0;
     }
     // event->code = KEY_NONE;
@@ -136,65 +137,177 @@ void DRAW(struct winScreen screen)
   fprintf(stderr,"%s",screen.screen);
   fflush(stderr);
 }
+// void* UPDATE(void *args)
+// {
+//   struct updateArg *arg = args;
+//   if(!isEmpty(keyBuffer))
+//   {
+//       // //Player 1 Position
+//       // int p1X = arg->p1->posX%W;
+//       // int p1Y = arg->p1->posY%H;
+//       // //pLAYER 2 Position
+//       // int p2X = arg->p2->posX%W;
+//       // int p2Y = arg->p2->posY%H;
+//       // if(p1X == arg->screen->width-1)
+//       //   arg->screen->screen[p1Y * W + p1X] = '\n';
+//       // else
+//       //   arg->screen->screen[p1Y * W + p1X] = '-';
+//       // if(p2X == arg->screen->width-1)
+//       //   arg->screen->screen[p2Y * W + p2X] = '\n';
+//       // else
+//       //   arg->screen->screen[p2Y * W + p2X] = '-';
+//       char key = dequeue(&keyBuffer);
+//       printf("Key : %c\n",key);
+//       switch(key)
+//       {
+//         case KEY_W:
+//           arg->p1->code = key;
+//           arg->p1->posY--;
+//           break;
+//         case KEY_S:
+//           arg->p1->code = key;
+//           arg->p1->posY++;
+//           break;
+//         case KEY_A:
+//           arg->p1->code = key;
+//           arg->p1->posX++;
+//           break;
+//         case KEY_D:
+//           arg->p1->posX--;
+//           break;
+//         case KEY_I:
+//           arg->p2->code = key;
+//           arg->p2->posY--;
+//           break;
+//         case KEY_K:
+//           arg->p2->code = key;
+//           arg->p2->posY++;
+//           break;
+//         case KEY_J:
+//           arg->p2->code = key;
+//           arg->p2->posX++;
+//           break;
+//         case KEY_L:
+//           arg->p2->code = key;
+//           arg->p2->posX--;
+//           break;
+//         default:
+//           break;
+//       }
+//       // p1X = arg->p1->posX % W;
+//       // p1Y = arg->p1->posY % H;
+//       // p2X = arg->p2->posX % W;
+//       // p2Y = arg->p2->posY % H;
+//       // if(p1X == arg->screen->width-1)
+//       //   arg->screen->screen[p1Y * W + p1X] = '\n';
+//       // else
+//       //   arg->screen->screen[p1Y * W + p2X] = '#';
+//       // if(p2X == arg->screen->width-1)
+//       //   arg->screen->screen[p2Y * W + p2X] = '\n';
+//       // else
+//       //   arg->screen->screen[p2Y * W + p2X] = '#';
+//   }
+//   arg->event->code = KEY_NONE;
+// }
 void* UPDATE(void *args)
 {
   struct updateArg *arg = args;
-  int currentX = arg->player->posX % W;
-  int currentY = arg->player->posY % H;
-  if(currentX == arg->screen->width-1)
-    arg->screen->screen[currentY * W + currentX] = '\n';
+  int p1X = arg->p1->posX % W;
+  int p1Y = arg->p1->posY % H;
+  if(p1X == arg->screen->width-1)
+    arg->screen->screen[p1Y * W + p1X] = '\n';
   else
-    arg->screen->screen[currentY * W + currentX] = '-';
-  if((arg->player->code == 1 && arg->event->code == KEY_W))
+    arg->screen->screen[p1Y * W + p1X] = '-';
+  int p2X = arg->p2->posX % W;
+  int p2Y = arg->p2->posY % H;
+  if(p2X == arg->screen->width-1)
+    arg->screen->screen[p2Y * W + p2X] = '\n';
+  else
+    arg->screen->screen[p2Y * W + p2X] = '-';
+  char key;
+  if(!isEmpty(keyBuffer))
   {
-    arg->player->posY--;
+    key = dequeue(&keyBuffer);
+    switch(key)
+    {
+      case KEY_I:
+        arg->p2->code = key;
+        break;
+      case KEY_K:
+        arg->p2->code = key;
+        break;
+      case KEY_J:
+        arg->p2->code = key;
+        break;
+      case KEY_L:
+        arg->p2->code = key;
+        break;
+      default:
+        arg->p1->code = key;
+        break;
+    }
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_A) )
+  else
   {
-    arg->player->posX--;
+    key = (char)KEY_NONE;
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_S))
+  if(key == KEY_W)
   {
-    arg->player->posY++;
+    arg->p1->posY--;
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_D))
+  if(key == KEY_A) 
   {
-    arg->player->posX++;
+    arg->p1->posX--;
   }
-  if(arg->event->code == KEY_I)
+  if(key == KEY_S)
   {
-    p2.code = KEY_I;
+    arg->p1->posY++;
   }
-  if(arg->event->code == KEY_J) 
+  if(key == KEY_D)
   {
-    p2.code = KEY_J;
+    arg->p1->posX++;
   }
-  if(arg->event->code == KEY_K)
+  if(key == KEY_I)
   {
-    p2.code = KEY_K;
+    arg->p2->posY--;
   }
-  if(arg->event->code == KEY_L)
+  if(key == KEY_J) 
   {
-    p2.code = KEY_L;
+    arg->p2->posX--;
   }
+  if(key == KEY_K)
+  {
+    arg->p2->posY++;
+  }
+  if(key == KEY_L)
+  {
+    arg->p2->posX++;
+  }
+
   if(arg->event->code == KEY_Q)
   {
     return NULL;
   }
-  currentX = arg->player->posX % W;
-  currentY = arg->player->posY % H;
-  if(currentX == arg->screen->width-1)
-    arg->screen->screen[currentY * W + currentX] = '\n';
+  p1X = arg->p1->posX % W;
+  p1Y = arg->p1->posY % H;
+  if(p1X == arg->screen->width-1)
+    arg->screen->screen[p1Y * W + p1X] = '\n';
   else
-    arg->screen->screen[currentY * W + currentX] = '#';
+    arg->screen->screen[p1Y * W + p1X] = '#';
+  p2X = arg->p2->posX % W;
+  p2Y = arg->p2->posY % H;
+  if(p1X == arg->screen->width-1)
+    arg->screen->screen[p2Y * W + p2X] = '\n';
+  else
+    arg->screen->screen[p2Y * W + p2X] = '#';
   arg->event->code = KEY_NONE;
-  p2.code = KEY_NONE;
+  // p2.code = KEY_NONE;
 }
 // void UPDATE(struct inputEvent *event,struct winScreen *screen, struct player *player)
 // {
-//   int currentX = player->posX % W;
-//   int currentY = player->posY % H;
-//   screen->screen[currentY * W + currentX] = '-';
+//   int p1X = player->posX % W;
+//   int p1Y = player->posY % H;
+//   screen->screen[p1Y * W + p1X] = '-';
 //   if((player->code == 1 && event->code == KEY_W) || ((player->code == 2 && event->code == KEY_I)))
 //   {
 //     player->posY--;
@@ -215,8 +328,8 @@ void* UPDATE(void *args)
 //   {
 //     return;
 //   }
-//   currentX = player->posX % W;
-//   currentY = player->posY % H;
-//   screen->screen[currentY * W + currentX] = '#';
+//   p1X = player->posX % W;
+//   p1Y = player->posY % H;
+//   screen->screen[p1Y * W + p1X] = '#';
 //   event->code = KEY_NONE;
 // }

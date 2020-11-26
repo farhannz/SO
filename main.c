@@ -1,9 +1,9 @@
 #include "core.h"
-
 // int posX = (W/2) % W;
 // int posY = (H/2) % H;
 // struct player p1,p2;
 int yTest = 0;
+struct player p1,p2;
 int main(int argc, char *argv[])
 {
     // Backup tampilan dari termios
@@ -20,18 +20,18 @@ int main(int argc, char *argv[])
     p1.posY = (H/2) %H;
     // Player 2
     p2.code = 2;
-    p2.posX = (W/6) % W;
+    p2.posX = (W - W/2) % W;
     p2.posY = (H/2) % H;
     // Variable untuk input event dan argument
-    struct inputEvent ev, ev2;
-    struct eventArg evArg, evArg2;
+    struct inputEvent ev;//, ev2;
+    struct eventArg evArg;//, evArg2;
     // Memasukkan argumen untuk eventHandler
     // Player1
     evArg.evCodes = EV_KEY;
     evArg.event = &ev;
     // Player 2
-    evArg2.evCodes = EV_KEY;
-    evArg2.event = &ev2;
+    // evArg2.evCodes = EV_KEY;
+    // evArg2.event = &ev2;
     // User Input Loop();
     // Game Loop
     int gameLoop = 1;
@@ -46,18 +46,19 @@ int main(int argc, char *argv[])
     // struct eventArg
     struct winScreen screen;
     createScreen(H,W, &screen);
+    createEmpty(&keyBuffer);
+    struct updateArg arg,arg2;
     pthread_create(&tid0,NULL,GetInputFromUser,(void *) &evArg);
     // pthread_create(&tid1,NULL,GetInputFromUser,(void *) &evArg2);
-
-    struct updateArg arg,arg2;
     // player 1
     arg.event = &ev;
     arg.screen = &screen;
-    arg.player = &p1;
+    arg.p1 = &p1;
+    arg.p2 = &p2;
     // Player 2
-    arg2.event = &ev2;
-    arg2.screen = &screen;
-    arg2.player = &p2;
+    // arg2.event = &ev2;
+    // arg2.screen = &screen;
+    // arg2.player = &p2;
     char testPiece[]="..X...X...X...X.";
     int speed = 0;
     while(gameLoop && evArg.event->code != KEY_Q)
@@ -73,13 +74,15 @@ int main(int argc, char *argv[])
        //  clear();
         if(delta >= period)
         {
-            system("clear");
+            clear();
+            // system("clear");
             gotoxy(0,0);
             // printf("FPS : %ld %d %g\n",delta, frames, (double)frames/delta);
             printf("TEST USER INPUT\n");
-            printf("P1 : %c P2:%c\n",ev.code + 65, p2.code+65);
+            printf("P1 : %c P2:%c\n",p1.code + 65, p2.code+65);
             UPDATE(&arg);
             // pthread_create(&tid2,NULL,UPDATE,(void*)&arg);
+            // pthread_join(tid2,NULL);
             int px, py;
             if(speed >=20)
             {
