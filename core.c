@@ -141,22 +141,41 @@ void* UPDATE(void *args)
   struct updateArg *arg = args;
   int currentX = arg->player->posX % W;
   int currentY = arg->player->posY % H;
-  arg->screen->screen[currentY * W + currentX] = '-';
-  if((arg->player->code == 1 && arg->event->code == KEY_W) || ((arg->player->code == 2 && arg->event->code == KEY_I)))
+  if(currentX == arg->screen->width-1)
+    arg->screen->screen[currentY * W + currentX] = '\n';
+  else
+    arg->screen->screen[currentY * W + currentX] = '-';
+  if((arg->player->code == 1 && arg->event->code == KEY_W))
   {
     arg->player->posY--;
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_A) || ((arg->player->code == 2 && arg->event->code == KEY_J)))
+  if((arg->player->code == 1 && arg->event->code == KEY_A) )
   {
     arg->player->posX--;
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_S) || ((arg->player->code == 2 && arg->event->code == KEY_K)))
+  if((arg->player->code == 1 && arg->event->code == KEY_S))
   {
     arg->player->posY++;
   }
-  if((arg->player->code == 1 && arg->event->code == KEY_D) || ((arg->player->code == 2 && arg->event->code == KEY_L)))
+  if((arg->player->code == 1 && arg->event->code == KEY_D))
   {
     arg->player->posX++;
+  }
+  if(arg->event->code == KEY_I)
+  {
+    p2.code = KEY_I;
+  }
+  if(arg->event->code == KEY_J) 
+  {
+    p2.code = KEY_J;
+  }
+  if(arg->event->code == KEY_K)
+  {
+    p2.code = KEY_K;
+  }
+  if(arg->event->code == KEY_L)
+  {
+    p2.code = KEY_L;
   }
   if(arg->event->code == KEY_Q)
   {
@@ -164,8 +183,12 @@ void* UPDATE(void *args)
   }
   currentX = arg->player->posX % W;
   currentY = arg->player->posY % H;
-  arg->screen->screen[currentY * W + currentX] = '#';
+  if(currentX == arg->screen->width-1)
+    arg->screen->screen[currentY * W + currentX] = '\n';
+  else
+    arg->screen->screen[currentY * W + currentX] = '#';
   arg->event->code = KEY_NONE;
+  p2.code = KEY_NONE;
 }
 // void UPDATE(struct inputEvent *event,struct winScreen *screen, struct player *player)
 // {

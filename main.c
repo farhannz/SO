@@ -2,8 +2,8 @@
 
 // int posX = (W/2) % W;
 // int posY = (H/2) % H;
-struct player p1,p2;
-
+// struct player p1,p2;
+int yTest = 0;
 int main(int argc, char *argv[])
 {
     // Backup tampilan dari termios
@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     struct winScreen screen;
     createScreen(H,W, &screen);
     pthread_create(&tid0,NULL,GetInputFromUser,(void *) &evArg);
-    pthread_create(&tid1,NULL,GetInputFromUser,(void *) &evArg2);
+    // pthread_create(&tid1,NULL,GetInputFromUser,(void *) &evArg2);
 
     struct updateArg arg,arg2;
     // player 1
@@ -55,9 +55,11 @@ int main(int argc, char *argv[])
     arg.screen = &screen;
     arg.player = &p1;
     // Player 2
-    arg2.event = &ev;
+    arg2.event = &ev2;
     arg2.screen = &screen;
     arg2.player = &p2;
+    char testPiece[]="..X...X...X...X.";
+    int speed = 0;
     while(gameLoop && evArg.event->code != KEY_Q)
     {
         //Game timing================
@@ -75,15 +77,38 @@ int main(int argc, char *argv[])
             gotoxy(0,0);
             // printf("FPS : %ld %d %g\n",delta, frames, (double)frames/delta);
             printf("TEST USER INPUT\n");
-            UPDATE((void*)&arg);
+            printf("P1 : %c P2:%c\n",ev.code + 65, p2.code+65);
+            UPDATE(&arg);
+            // pthread_create(&tid2,NULL,UPDATE,(void*)&arg);
+            int px, py;
+            if(speed >=20)
+            {
+                speed =0;
+                yTest++;
+            }
+            for(py = 0;py < 4;++py)
+            {
+                for(px = 0;px < 4;++px)
+                {
+                    if(testPiece[py*4 + px] !='.')
+                    {
+                        screen.screen[((yTest + py + 2))%screen.height*screen.width + px + W/2] = 'T';
+                    }
+                }
+            }
+            for(px = 0;px < 4;++px)
+            {
+                screen.screen[((yTest +1))%screen.height*screen.width +  px + W/2] = '-';
+            }
             DRAW(screen);
             // frames = 0;
             start = end;
+            speed++;
         }
-            // frames = 0;
+            frames = 0;
             // start = end;
         // }
-        // ++frames;
+        ++frames;
     }
     // pthread_join(tid0,NULL);
     printf("Program is done\n%d\n",evArg.event->code);

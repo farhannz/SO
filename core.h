@@ -97,3 +97,4 @@ char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
 int keyHit();           // check apakah keyboard ditekan atau tidak
 void drawField(int rows,int columns);
+struct player p1,p2;
