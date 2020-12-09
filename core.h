@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <pthread.h>
+#include <string.h>
 #include "queue.h"
 // #include <sys/ioctl.h>
 // #include <string.h>
@@ -101,6 +102,7 @@ void DRAW(struct winScreen screen);
 void createScreen(int height, int width, struct winScreen * screen);
 char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
-int keyHit();           // check apakah keyboard ditekan atau tidak
 void drawField(int rows,int columns);
+int keyHit();           // check apakah keyboard ditekan atau tidak
+int getIndex(int x,int y, struct winScreen screen);
 #endif // !CORE_H

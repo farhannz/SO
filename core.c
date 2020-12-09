@@ -1,5 +1,7 @@
 #include "core.h"
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+
 void initTermios(void)
 {
     // Mengambil dari standard input (STDIN);
@@ -41,7 +43,10 @@ void * GetInputFromUser(void *args)
   // int x;
   // pthread_exit(&x);
 }
-
+int getIndex(int x, int y, struct winScreen screen)
+{
+  return y * screen.width + x;
+}
 void createScreen(int height, int width, struct winScreen *screen)
 {
   screen->width = width;
@@ -292,14 +297,14 @@ void* UPDATE(void *args)
   p1Y = arg->p1->posY % H;
   if(p1X == arg->screen->width-1)
     arg->screen->screen[p1Y * W + p1X] = '\n';
-  else
-    arg->screen->screen[p1Y * W + p1X] = '#';
+  // else
+  //   arg->screen->screen[p1Y * W + p1X] = '#';
   p2X = arg->p2->posX % W;
   p2Y = arg->p2->posY % H;
   if(p1X == arg->screen->width-1)
     arg->screen->screen[p2Y * W + p2X] = '\n';
-  else
-    arg->screen->screen[p2Y * W + p2X] = '#';
+  // else
+  //   arg->screen->screen[p2Y * W + p2X] = '#';
   arg->event->code = KEY_NONE;
   // p2.code = KEY_NONE;
 }

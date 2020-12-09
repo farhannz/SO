@@ -6,6 +6,7 @@ int yTest = 0;
 struct player p1,p2;
 int main(int argc, char *argv[])
 {
+    srand(time(NULL));
     // Backup tampilan dari termios
     struct termios old;
     tcgetattr(STDIN_FILENO,&old);
@@ -20,7 +21,7 @@ int main(int argc, char *argv[])
     p1.posY = (H/2) %H;
     // Player 2
     p2.code = 2;
-    p2.posX = (W - W/2) % W;
+    p2.posX = (W - W/4) % W;
     p2.posY = (H/2) % H;
     // Variable untuk input event dan argument
     struct inputEvent ev;//, ev2;
@@ -59,7 +60,16 @@ int main(int argc, char *argv[])
     // arg2.event = &ev2;
     // arg2.screen = &screen;
     // arg2.player = &p2;
-    char testPiece[]="..X...X...X...X.";
+    // char testPiece[]="..X...X...X...X.";
+    // char testPiece[16] = ".X...XX...X.....";
+    char tetromino[7][17];
+    strcpy(tetromino[0],"..X...X...X...X."); // Tetronimos 4x4
+	strcpy(tetromino[1],"..X..XX...X.....");
+	strcpy(tetromino[2],".....XX..XX.....");
+	strcpy(tetromino[3],"..X..XX..X......");
+	strcpy(tetromino[4],".X...XX...X.....");
+	strcpy(tetromino[5],".X...X...XX.....");
+	strcpy(tetromino[6],"..X...X..XX.....");
     int speed = 0;
     while(gameLoop && evArg.event->code != KEY_Q)
     {
@@ -74,41 +84,67 @@ int main(int argc, char *argv[])
        //  clear();
         if(delta >= period)
         {
-            clear();
-            // system("clear");
+           
+            // clear();
+            system("clear");
             gotoxy(0,0);
-            // printf("FPS : %ld %d %g\n",delta, frames, (double)frames/delta);
+            printf("Frametime : %ld ms FPS : %g\n",delta,(double)frames/delta);
             printf("TEST USER INPUT\n");
             printf("P1 : %c P2:%c\n",p1.code + 65, p2.code+65);
             UPDATE(&arg);
             // pthread_create(&tid2,NULL,UPDATE,(void*)&arg);
             // pthread_join(tid2,NULL);
+            // Test unit tetris dan kecepatan turunnya
             int px, py;
-            if(speed >=20)
-            {
-                speed =0;
-                yTest++;
-            }
             for(py = 0;py < 4;++py)
             {
                 for(px = 0;px < 4;++px)
                 {
-                    if(testPiece[py*4 + px] !='.')
+                    //getIndex(x,y);
+                    screen.screen[getIndex(px  + p1.posX, (py+yTest)%(screen.height+5),screen)] = '-';
+                    screen.screen[getIndex(px  + p2.posX, (py+yTest)%(screen.height+5),screen)] = '-';
+                    // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = '-';
+                }
+            }
+            
+            int currentPiece,currentPiece2;
+            printf("%d\n",yTest % screen.height);
+
+            if(yTest %16 == 0 && yTest != 0)
+            {
+                currentPiece = rand()%7;
+                currentPiece2 = rand()%7;
+            }
+            if(speed >=20)
+            {
+                speed =0;
+                yTest++;
+                yTest %= screen.height + 5;
+            }
+            // int currentPiece = rand()%5;
+            for(py = 0;py < 4;++py)
+            {
+                for(px = 0;px < 4;++px)
+                {
+                    if(tetromino[currentPiece][(py)*4+px] != '.')
                     {
-                        screen.screen[((yTest + py + 2))%screen.height*screen.width + px + W/2] = 'T';
+                        screen.screen[getIndex(px + p1.posX, (py+yTest)%(screen.height+5),screen)] = 'T';
+                        // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
+                    }
+                    if(tetromino[currentPiece2][(py)*4+px] != '.')
+                    {
+                        screen.screen[getIndex(px + p2.posX, (py+yTest)%(screen.height+5),screen)] = 'G';
+                        // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
                     }
                 }
             }
-            for(px = 0;px < 4;++px)
-            {
-                screen.screen[((yTest +1))%screen.height*screen.width +  px + W/2] = '-';
-            }
+            // Render screen ke terminal
             DRAW(screen);
             // frames = 0;
             start = end;
             speed++;
-        }
             frames = 0;
+        }
             // start = end;
         // }
         ++frames;
