@@ -8,6 +8,7 @@
 #include <termios.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/resource.h>
 #include "queue.h"
 // #include <sys/ioctl.h>
 // #include <string.h>
@@ -51,10 +52,12 @@
 #define KEY_PRESSED 0
 #define KEY_REPEATED 1
 
-// Besar dari windows
-#define W 50
+// Besar dari screen
+#define W 100
 #define H 15
-
+// Besar dari field tetris
+#define pW 13
+#define pH 12
 pthread_mutex_t mutex;
 
 int posX;
@@ -87,22 +90,40 @@ struct winScreen {
 struct player {
     int posX;
     int posY;
+    int pemain;
     int code;
+    int rotasi;
+    double health;
+    int score;
+    int tetris;
+    int speed;
+    struct winScreen *playField;
 };
 //Input buffer
 queue keyBuffer;
+//Key yang akan diproses
+char inputan;
+char tetromino[7][17];
 //
+void initPlayer(struct player* player,int pemain, int code,int posX,int posY,double health,int score);
 void initTermios(void);
 void resetTermios(void);
 void EventHandler(int evCodes, struct inputEvent * event);
 void *GetInputFromUser(void * args);
 // void UPDATE(struct inputEvent *event, struct winScreen *screen, struct player *player);
 void *UPDATE(void *args);
-void DRAW(struct winScreen screen);
+void *UPDATEP1(void *args);
+void *UPDATEP2(void *args);
+void DRAW(struct player p1, struct player p2,struct winScreen *screen, char **tetromino);
+void drawPlayerAttributes(struct player, struct winScreen *screen, int coorX, int coorY);
+void drawField(struct player player, int coorX,int coorY, struct winScreen *screen);
+void drawScore(struct player player,int coorX,int coorY,struct winScreen *screen);
+void drawHealth(struct player player,int coorX,int coorY,struct winScreen *screen);
 void createScreen(int height, int width, struct winScreen * screen);
 char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
-void drawField(int rows,int columns);
+int isHit(struct player player);             // Hit hitbox
+int indexRotasi(int rotasi, int x, int y);      // Index hasil rotasi
 int keyHit();           // check apakah keyboard ditekan atau tidak
 int getIndex(int x,int y, struct winScreen screen);
 #endif // !CORE_H

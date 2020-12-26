@@ -30,16 +30,46 @@ char inputKey(void)
   resetTermios();
   return c;
 }
+void initPlayer(struct player* player,int pemain,int code,int posX,int posY,double health,int score)
+{
+  // Inisialisasi nilai awal dari player
+  player->code = code;
+  player->posX = posX;
+  player->posY = posY;
+  player->health = health;
+  player->score = score;
+  player->playField = (struct winScreen *)malloc(sizeof(struct winScreen));
+  player->playField->width = pW;
+  player->playField->height = pH;
+  player->pemain = pemain;
+  player->rotasi = 0;
+  player->tetris = 0;
+  player->speed = 0;
+  player->playField->screen = (char*)malloc(pW*pH*sizeof(char));
+  int i,j;
+  for(i = 0;i< pH; ++i)
+  {
+    for(j = 0;j< pW; ++j)
+    {
+      if(j == 0 || j == pW - 1 || i == pH-1){
+        player->playField->screen[getIndex(j, i, *player->playField)] = '#';
+      }
+      else{
+        player->playField->screen[getIndex(j, i, *player->playField)] = '-';
+      }
+    }
+  }
+}
 void * GetInputFromUser(void *args)
 {
   struct eventArg *evArg = args;
   // Memanggil event handler untuk Input User
-  pthread_mutex_lock(&mutex);
+  // pthread_mutex_lock(&mutex);
   while(1 && evArg->event->code != KEY_Q)
   {
     EventHandler(evArg->evCodes,evArg->event);
   }
-  pthread_mutex_unlock(&mutex);
+  // pthread_mutex_unlock(&mutex);
   // int x;
   // pthread_exit(&x);
 }
@@ -101,46 +131,152 @@ int keyHit()
   }
   return 0;
 }
-void drawField(int rows, int columns)
-{
-  char screen[rows*columns];
-  int i , j;
-  for(i = 0;i < rows;++i)
-  {
-    for(j = 0;j< columns;++j)
-    {
-      if(i == rows-1 || j == 0 || j == columns-1)
-        screen[i * columns + j] = '#';
-        // printf("#");
-      else
-        // printf(".");
-        screen[i * columns + j] = '.';
-    }
+
+int indexRotasi(int rotasi, int x , int y){
+  int rot = 0;
+  switch(rotasi % 4){
+    case 0: // 0 Derajat
+      rot = y * 4 + x;
+      break;
+    case 1: // 90 Derajat
+      rot = 12 + y - (4 * x);
+      break;
+    case 2: // 180 derajat
+      rot = 15 -(y* 4) + x;
+      break;
+    case 3: // 270 derajat
+      rot = 3 - y + (4 * x);
+      break;
   }
-  for(i = 0;i < rows;++i)
+  return rot;
+}
+void drawField(struct player player, int coorX, int coorY,struct winScreen *screen)
+{
+  int i,j;
+  for(i = 0;i< pH; ++i)
   {
-    for(j = 0;j< columns;++j)
+    for(j = 0;j< pW; ++j)
     {
-      printf("%c",screen[i*columns + j]);
+        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = player.playField->screen[getIndex(j,i,*player.playField)];
     }
-    printf("\n");
   }
 }
-void DRAW(struct winScreen screen)
+void drawScore(struct player player,int coorX,int coorY,struct winScreen *screen)
 {
-  // system("clear");
-  
-  // int i ,j;
-  // for(i = 0; i<screen.height;++i)
-  // {
-  //   for(j = 0; j<screen.width;++j)
-  //   {
-  //     printf("%c",screen.screen[i * screen.width + j]);
-  //   }
-  //   printf("\n");
-  // }
-  fprintf(stderr,"%s",screen.screen);
+  char buffer[50];
+  sprintf(buffer,"P%d Scores : %09d",player.pemain, player.score);
+  for(int i = 0;i<strlen(buffer);++i){
+    screen->screen[getIndex(coorX+i,coorY,*screen)] = buffer[i];
+  }
+}
+void drawPlayerAttributes(struct player player, struct winScreen *screen, int coorX, int coorY)
+{
+    drawField(player, coorX,coorY,screen);
+}
+void drawHealth(struct player player,int coorX,int coorY,struct winScreen *screen)
+{
+  char buffer[50];
+  char pla[50];
+  sprintf(pla,"Player %d",player.pemain);
+  sprintf(buffer,"|=====%g=====|",player.health);
+  for(int i = 0;i<strlen(buffer);++i)
+  {
+    screen->screen[getIndex(coorX+i,coorY,*screen)] = buffer[i];
+  }
+  for(int i = 0;i<strlen(pla);++i)
+  {
+    screen->screen[getIndex(coorX+i+(strlen(pla)/2),coorY-1,*screen)] = pla[i];
+  }
+}
+void DRAW(struct player p1, struct player p2,struct winScreen *screen, char**tetromino)
+{
+  drawPlayerAttributes(p1,screen,2,3);
+  drawPlayerAttributes(p2,screen,50,3);
+  drawScore(p1,20,5,screen);
+  drawScore(p2,20,8,screen);
+  drawHealth(p1,1,2,screen);
+  drawHealth(p2,49,2,screen);
+  fprintf(stderr,"%s",screen->screen);
   fflush(stderr);
+}
+
+void *UPDATEP1(void *args)
+{
+  srand(time(NULL));
+  struct updateArg *arg = args;
+  switch(inputan){
+    case KEY_W:
+      arg->p1->code = inputan;
+      arg->p1->rotasi = (arg->p1->rotasi + 1)%4;
+      break;
+    case KEY_S:
+      arg->p1->code = inputan;
+      arg->p1->posY = (arg->p1->posY + 1)% pH;
+      break;
+    case KEY_A:
+      arg->p1->code = inputan;
+      arg->p1->posX = (arg->p1->posX - 1) % pW;
+      break;
+    case KEY_D:
+      arg->p1->code = inputan;
+      arg->p1->posX = (arg->p1->posX + 1) %pW;
+      break;
+  }
+  arg->p1->speed++;
+  if(arg->p1->speed>=20){
+    arg->p1->speed = 0;
+    arg->p1->posY = (arg->p1->posY + 1)% pH;
+  }
+  if(arg->p1->posY % (arg->p1->playField->height-2)==0 && arg->p1->posY != 0){
+    arg->p1->tetris = rand()%7;
+  }
+  int px, py;
+  printf("%d\n",arg->p1->posY);
+  for(py = 0;py < 4;++py)
+  {
+      for(px = 0;px < 4;++px)
+      {
+          //getIndex(x,y);
+          arg->p1->playField->screen[getIndex((px  + arg->p1->posX)%arg->p1->playField->width, (py+arg->p1->posY-1)%(arg->p1->playField->height-1),*(arg->p1->playField))] = '-';
+          // screen.screen[getIndex(px  + p2.posX, (py+yTest)%(screen.height+5),screen)] = '-';
+          // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = '-';
+      }
+  }
+  for(py = 0;py < 4;++py)
+  {
+      for(px = 0;px < 4;++px)
+      {
+          if(tetromino[arg->p1->tetris][indexRotasi(arg->p1->rotasi,px,py)] != '.')
+          {
+              arg->p1->playField->screen[getIndex((px + arg->p1->posX)%arg->p1->playField->width, (py+arg->p1->posY)%(arg->p1->playField->height-1),*(arg->p1->playField))] = 'T';
+              // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
+          }
+      }
+  }
+  pthread_exit(0);
+}
+void *UPDATEP2(void *args)
+{
+  struct updateArg *arg = args;
+  switch(inputan){
+    case KEY_I:
+      arg->p2->code = inputan;
+      arg->p2->rotasi = (arg->p2->rotasi + 1)%4;
+      break;
+    case KEY_K:
+      arg->p2->code = inputan;
+      arg->p2->posY--;
+      break;
+    case KEY_J:
+      arg->p2->code = inputan;
+      arg->p2->posX--;
+      break;
+    case KEY_L:
+      arg->p2->code = inputan;
+      arg->p2->posX++;
+      break;
+  }
+  pthread_exit(0);
 }
 // void* UPDATE(void *args)
 // {

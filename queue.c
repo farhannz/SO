@@ -14,7 +14,6 @@ int isEmpty(queue Q){
 
 void enqueue(char input, queue *Q ){
   elemen* baru;
-  printf("Enqueued\n");
   baru = (elemen *) malloc (sizeof (elemen));
   baru->data = input;
   baru->next = NULL;
