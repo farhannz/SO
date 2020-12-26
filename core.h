@@ -95,6 +95,7 @@ struct player {
     int rotasi;
     double health;
     int score;
+    int curBalok;
     int tetris;
     int speed;
     struct winScreen *playField;
@@ -114,15 +115,17 @@ void *GetInputFromUser(void * args);
 void *UPDATE(void *args);
 void *UPDATEP1(void *args);
 void *UPDATEP2(void *args);
-void DRAW(struct player p1, struct player p2,struct winScreen *screen, char **tetromino);
+void DRAW(struct player *p1, struct player *p2,struct winScreen *screen, char **tetromino);
+void drawPieces(struct player *player, struct winScreen *screen);
 void drawPlayerAttributes(struct player, struct winScreen *screen, int coorX, int coorY);
-void drawField(struct player player, int coorX,int coorY, struct winScreen *screen);
+void drawField(struct player *player, int coorX,int coorY, struct winScreen *screen);
 void drawScore(struct player player,int coorX,int coorY,struct winScreen *screen);
 void drawHealth(struct player player,int coorX,int coorY,struct winScreen *screen);
 void createScreen(int height, int width, struct winScreen * screen);
 char inputKey(void);      // Mengembalikan character dari keyboard input
 char* getKeyState(struct inputEvent ev);
-int isHit(struct player player);             // Hit hitbox
+void clearTrail(int x , int y, struct player *player);
+int isHit(int x, int y, int rotasi, struct player *player);             // Hit hitbox
 int indexRotasi(int rotasi, int x, int y);      // Index hasil rotasi
 int keyHit();           // check apakah keyboard ditekan atau tidak
 int getIndex(int x,int y, struct winScreen screen);

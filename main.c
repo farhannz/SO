@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
         // Player 1
         initPlayer(&p1,1,1,pW/2, 0,100,0);
         // Player 2
-        initPlayer(&p2,2,2,(W - W/4) % W,(H/2) % H,100,0);
+        initPlayer(&p2,2,2,pW/2,0,100,0);
 
 
         // Variable untuk input event dan argument
@@ -104,11 +104,11 @@ int main(int argc, char *argv[])
                 else{
                     inputan = KEY_NONE;
                 }
-                // UPDATEP1(&arg);
+                // UPDATE(&arg);
                 pthread_create(&tid1,NULL,UPDATEP1,&arg);
-                // pthread_create(&tid2,NULL,UPDATEP2,&arg);
+                pthread_create(&tid2,NULL,UPDATEP2,&arg);
                 pthread_join(tid1,NULL);
-                // pthread_join(tid2,NULL);
+                pthread_join(tid2,NULL);
                 // Test unit tetris dan kecepatan turunnya
                 // int px, py;
                 // for(py = 0;py < 4;++py)
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
                 printf("=====================Player 2=====================\n");
                 printf("  I = Atas || K = Bawah || J = Kiri || L = Kanan\n");
                 printf("==================================================\n");
-                DRAW(p1,p2,&screen,tetromino);
+                DRAW(&p1,&p2,&screen,tetromino);
 
                 start = end;
                 speed++;
