@@ -6,6 +6,6 @@ To Do :
 2. Render Tetris pieces [Test kecepatan turun dari tetris]
                         [Menampilkan bentuk tetris secara acak]
                         [Balok tetris sudah ada di dalam playfieldnya masing masing]
-3. Menu                 [Sudah ada]
+3. Menu                 [Sudah bisa stacking walaupun masih ada bugnya]
 4. Player Attributes    [Placeholder untuk player scores dan health]
                         [Placeholder sudah ditampilkan pada layar]
