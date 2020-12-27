@@ -38,7 +38,7 @@ void initPlayer(struct player* player,int pemain,int code,int posX,int posY,doub
   player->posY = posY;
   player->health = health;
   player->score = score;
-  player->playField = (struct winScreen *)malloc(sizeof(struct winScreen));
+  player->playField = (struct playField *)malloc(sizeof(struct playField));
   player->playField->width = pW;
   player->playField->height = pH;
   player->pemain = pemain;
@@ -46,17 +46,20 @@ void initPlayer(struct player* player,int pemain,int code,int posX,int posY,doub
   player->curBalok = 0;
   player->tetris = 0;
   player->speed = 0;
-  player->playField->screen = (char*)malloc(pW*pH*sizeof(char));
+  player->gameOver = 0;
+  player->playField->screen = (int*)malloc(pW*pH*sizeof(int));
   int i,j;
   for(i = 0;i< pH; ++i)
   {
     for(j = 0;j< pW; ++j)
     {
       if(j == 0 || j == pW - 1 || i == pH-1){
-        player->playField->screen[getIndex(j, i, *player->playField)] = 9;
+        player->playField->screen[ i * player->playField->width + j] = 9;
+        // player->playField->screen[getIndex(j, i, *player->playField)] = 9;
       }
       else{
-        player->playField->screen[getIndex(j, i, *player->playField)] = 0;
+        player->playField->screen[ i * player->playField->width + j] = 0;
+        // player->playField->screen[getIndex(j, i, *player->playField)] = 0;
       }
     }
   }
@@ -152,54 +155,70 @@ int indexRotasi(int rotasi, int x , int y){
   return rot;
 }
 
-pthread_mutex_t hitLock;
-
+pthread_mutex_t hitLock, hitLock2;
 int isHit(int x, int y, int rotate,  struct player *player)
 {
   pthread_mutex_init(&hitLock,NULL);
   pthread_mutex_lock(&hitLock);
   int rot;
   int ans = -99999;
-  for(int i =0 ;i<4;++i){
-    for(int j = 0;j<4;++j){
-      rot = indexRotasi(rotate,j,i);
-      int fi = getIndex((x+j),(y+i),*player->playField);
-      if(x + j >= 0 && x + j < pW){
-        if(y + i >= 0 && y + i < pH){
-          if(tetromino[player->tetris][rot] != '.' && player->playField->screen[fi] == 0)
-          {
-            ans = (ans > fi) ? ans : fi;
-          }
-        }
-      }
-    }
-  }
-  for(int i =0 ;i<4;++i){
-    for(int j = 0;j<4;++j){
-      rot = indexRotasi(rotate,j,i);
-      int fi = getIndex((x+j),(y+i),*player->playField);
-      if(x + j >= 0 && x + j < pW){
-        if(y + i >= 0 && y + i < pH){
-          if(fi == ans){
-            return 0;
-          }
-        }
+  for(int i =0;i<4;++i)
+  {
+    for(int j = 0;j<4;++j)
+    {
+      int rot = indexRotasi(player->rotasi,j,i);
+      int tempX = player->posX + x + j;
+      int tempY = player->posY + y + i;
+      int idx = tempY * player->playField->width + tempX;
+      if(tetromino[player->tetris][rot] !='.')
+      {
+        if(tempX <=0 || tempX >= pW-1 || tempY >= pH-1 || (player->playField->screen[idx] != 0 && player->playField->screen[idx] != player->curBalok+1))
+          return 1;
       }
     }
   }
   pthread_mutex_unlock(&hitLock);
-  return 1;
+  return 0;
+}
+int isHitRotasi(int x, int y, int rotate,  struct player *player)
+{
+  pthread_mutex_init(&hitLock2,NULL);
+  pthread_mutex_lock(&hitLock2);
+  int rot;
+  int ans = -99999;
+  for(int i =0;i<4;++i)
+  {
+    for(int j = 0;j<4;++j)
+    {
+      int rot = indexRotasi(player->rotasi,j,i);
+      int tempX = player->posX + x + j;
+      int tempY = player->posY + y + i;
+      int idx = tempY * player->playField->width + tempX;
+      if(tetromino[player->tetris][rot] !='.')
+      {
+        if(tempX <=0 || tempX >= pW-1 || tempY >= pH-1 || (player->playField->screen[idx] != 0 ))
+          return 1;
+        // if(player->playField->screen[idx] != 0)
+        //   return 1;
+      }
+    }
+  }
+  pthread_mutex_unlock(&hitLock2);
+  return 0;
 }
 void clearTrail(int x , int y, struct player *player ){
   // printf("Clearing.....\n");
   for(int i =0;i<4;++i){
     for(int j = 0;j<4;++j){
-      int idx = getIndex(x + j,y + i,*player->playField);
+      int tempX = x + j;
+      int tempY = y + i;
+      int rot = indexRotasi(player->rotasi,j,i);
+      int idx = tempY * player->playField->width + tempX;
       if(x + j >= 0 && x + j < pW){
         if(y + i >= 0 && y + i < pH){
           if(player->playField->screen[idx] != 9 && player->playField->screen[idx] != 0)
           {
-            if(player->playField->screen[idx] == player->curBalok+1)
+            if(tetromino[player->tetris][rot] !='.' && player->playField->screen[idx] == player->curBalok+1)
             {
               player->playField->screen[idx] = 0;
             }
@@ -216,7 +235,22 @@ void drawField(struct player *player, int coorX, int coorY,struct winScreen *scr
   {
     for(j = 0;j< pW; ++j)
     {
-        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = " ABCDEFG=#"[player->playField->screen[i*pW + j]];//player.playField->screen[getIndex(j,i,*player.playField)];
+      if(player->playField->screen[i*pW + j] == 0)
+      {
+        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = ' ';
+      }
+      else if(player->playField->screen[i*pW + j] == 9)
+      {
+        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = '#';
+      }
+      else if(player->playField->screen[i*pW + j] == 8)
+      {
+        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = '=';
+      }
+      else
+      {
+        screen->screen[getIndex(coorX + j, coorY + i, *screen)] = "ABCDEFG"[(player->playField->screen[i*pW + j] % 7)];//player.playField->screen[getIndex(j,i,*player.playField)];
+      }
     }
   }
 }
@@ -230,47 +264,19 @@ void drawScore(struct player player,int coorX,int coorY,struct winScreen *screen
 }
 void drawPieces(struct player *player, struct winScreen *screen){
   int i,j;
-  // for(int i =0 ;i<4;++i){
-  //   for(int j = 0;j<4;++j){
-  //     int rot = indexRotasi(player->rotasi,j,i);
-  //     int fi = getIndex((player->posX+j+1),(player->posY+i),*player->playField);
-  //     if(player->posX + j >= 0 && player->posX + j < pW){
-  //       if(player->posY + i >= 0 && player->posY + i < pH){
-  //         if(tetromino[player->tetris][rot] != '.' && player->playField->screen[fi] == 0)
-  //         {
-  //           // player->playField->screen[fi] = 7;
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-  // for(i = 0;i<pH;++i){
-  //   for(j = 0;j<pW;++j){
-  //     printf("%d",player->playField->screen[getIndex(j,i,*player->playField)]);
-  //   }
-  //   printf("\n");
-  // }
-  // for(i =0;i<4;++i){
-  //   for(j = 0;j<4;++j){
-  //     // printf("YOW %d %d\n",i,j);
-  //     if( player->playField->screen[getIndex(player->posX+j,(player->posY + i - 1)%pH, *player->playField)] != 9 &&  player->playField->screen[getIndex(player->posX+j,(player->posY + i - 1)%pH, *player->playField)] != 0)
-  //     {
-  //       player->playField->screen[getIndex(player->posX+j,(player->posY + i - 1)%pH, *player->playField)] = 0;
-  //     }
-  //   }
-  // }
-  // clearTrail(player->posX,player->posY-1,player);
   for(i =0;i<4;++i){
     for(j = 0;j<4;++j){
       if(tetromino[player->tetris][indexRotasi(player->rotasi,j,i)] != '.')
-        player->playField->screen[getIndex(player->posX + j,(player->posY + i)%pH, *player->playField)] = player->curBalok+1;
+      {
+        int tempX = player->posX + j;
+        int tempY = (player->posY + i)%pH;
+        int idx = tempY * player->playField->width + tempX;
+        player->playField->screen[idx] = player->curBalok+1;
+      }
     }
   }
 }
-// void drawPlayerAttributes(struct player player, struct winScreen *screen, int coorX, int coorY)
-// {
-//     drawField(player, coorX,coorY,screen);
-// }
+
 void drawHealth(struct player player,int coorX,int coorY,struct winScreen *screen)
 {
   char buffer[50];
@@ -291,20 +297,20 @@ void drawHealth(struct player player,int coorX,int coorY,struct winScreen *scree
     screen->screen[getIndex(coorX+i,coorY,*screen)] = buffer[i];
   }
 }
-void DRAW(struct player *p1, struct player *p2,struct winScreen *screen, char**tetromino)
+void *DRAW(void* args)
 {
-  // drawPlayerAttributes(*p1,screen,2,3);
-  // drawPlayerAttributes(*p2,screen,50,3);
-  drawField(p1, 2,3,screen);
-  drawField(p2, 50,3,screen);
-  drawScore(*p1,20,5,screen);
-  drawScore(*p2,20,8,screen);
-  drawHealth(*p1,1,2,screen);
-  drawHealth(*p2,49,2,screen);
-  drawPieces(p1,screen);
-  drawPieces(p2,screen);
-  fprintf(stderr,"%s",screen->screen);
-  fflush(stderr);
+  struct drawArg *arg = args;
+  drawField(arg->p1, 2,3,arg->screen);
+  drawField(arg->p2, 50,3,arg->screen);
+  drawScore(*arg->p1,20,5,arg->screen);
+  drawScore(*arg->p2,20,8,arg->screen);
+  drawHealth(*arg->p1,1,2,arg->screen);
+  drawHealth(*arg->p2,49,2,arg->screen);
+  drawPieces(arg->p1,arg->screen);
+  drawPieces(arg->p2,arg->screen);
+  fprintf(stderr,"%s",arg->screen->screen);
+  // fflush(stderr);
+  pthread_exit(NULL);
 }
 pthread_mutex_t p1Lock;
 pthread_mutex_t p2Lock;
@@ -312,127 +318,170 @@ void *UPDATEP1(void *args)
 {
   pthread_mutex_init(&p1Lock,NULL);
   struct updateArg *arg = args;
+  queue garisPenuh;
+  createEmpty(&garisPenuh);
   pthread_mutex_lock(&p1Lock);
   switch(inputan){
-      case KEY_W:
-        arg->p1->code = inputan;
-        if(isHit(arg->p1->posX, arg->p1->posY, arg->p1->rotasi+1,arg->p1) == 0)
+    case KEY_W:
+      arg->p1->code = inputan;
+      //isHit(x,y,rotasi,player)
+      int kick = 0, kick2 = 0;
+      if(isHitRotasi(0,0,arg->p1->rotasi+1,arg->p1))
+      {
+        if(arg->p1->posX >= 0 && arg->p1->posX < pW/2)
         {
-          arg->p1->rotasi+=1;
-          clearTrail(arg->p1->posX, arg->p1->posY,arg->p1);
+          kick = 1;
         }
-        // arg->p2->rotasi += (!isHit(arg->p2->posX, arg->p2->posY, arg->p2->rotasi+1,arg->p2))? 0 : 1;
-        break;
-      case KEY_S:
-        arg->p1->code = inputan;
-        if(isHit(arg->p1->posX, arg->p1->posY+1, arg->p1->rotasi,arg->p1) == 0)
+        else if(arg->p1->posX >=pW/2 && arg->p1->posX <= pW-1)
         {
-          arg->p2->posY+=1;
-          clearTrail(arg->p1->posX, arg->p1->posY-1,arg->p1);
+          kick = -1;
         }
-        // arg->p2->posY += (!isHit(arg->p2->posX, arg->p2->posY+1, arg->p2->rotasi,arg->p2))? 0 : 1;
-        break;
-      case KEY_A:
-        arg->p1->code = inputan;
-        if(isHit(arg->p1->posX-1, arg->p1->posY, arg->p1->rotasi,arg->p1) == 0)
+        clearTrail(arg->p1->posX, arg->p1->posY,arg->p1);
+      }
+      if(isHitRotasi(kick,0,arg->p1->rotasi+1,arg->p1) == 0)
+      {
+        arg->p1->posX += kick;
+        arg->p1->rotasi +=1;
+      }
+      break;
+    case KEY_S:
+      arg->p1->code = inputan;
+      if(isHit(0,1, arg->p1->rotasi,arg->p1) == 0)
+      {
+        arg->p1->posY+=1;
+        clearTrail(arg->p1->posX, arg->p1->posY-1,arg->p1);
+      }
+      // arg->p2->posY += (!isHit(arg->p2->posX, arg->p2->posY+1, arg->p2->rotasi,arg->p2))? 0 : 1;
+      break;
+    case KEY_A:
+      arg->p1->code = inputan;
+      if(isHit(-1,0, arg->p1->rotasi,arg->p1) == 0)
+      {
+        arg->p1->posX-=1;
+        clearTrail(arg->p1->posX+1, arg->p1->posY,arg->p1);
+      }
+      // arg->p2->posX -= (!isHit(arg->p2->posX-1, arg->p2->posY, arg->p2->rotasi,arg->p2))? 0 : 1;
+      break;
+    case KEY_D:
+      arg->p1->code = inputan;
+      if(isHit(1, 0, arg->p1->rotasi,arg->p1) == 0)
+      {
+        arg->p1->posX +=1;
+        clearTrail(arg->p1->posX-1, arg->p1->posY,arg->p1);
+      }
+      // arg->p2->posX += (!isHit(arg->p2->posX+1, arg->p2->posY, arg->p2->rotasi,arg->p2))? 0 : 1;
+      break;
+    default:
+      if(arg->p1->speed >= 20){
+        if(isHit(0, 1, arg->p1->rotasi,arg->p1) == 0)
         {
-          arg->p1->posX-=1;
-          clearTrail(arg->p1->posX+1, arg->p1->posY,arg->p1);
+          arg->p1->speed = 0;
+          arg->p1->posY++;
+          clearTrail(arg->p1->posX, (arg->p1->posY-1),arg->p1);
         }
-        // arg->p2->posX -= (!isHit(arg->p2->posX-1, arg->p2->posY, arg->p2->rotasi,arg->p2))? 0 : 1;
-        break;
-      case KEY_D:
-        arg->p1->code = inputan;
-        if(isHit(arg->p1->posX+1, arg->p1->posY, arg->p1->rotasi,arg->p1) == 0)
+        else
         {
-          arg->p1->posX +=1;
-          clearTrail(arg->p1->posX-1, arg->p1->posY,arg->p1);
-        }
-        // arg->p2->posX += (!isHit(arg->p2->posX+1, arg->p2->posY, arg->p2->rotasi,arg->p2))? 0 : 1;
-        break;
-      default:
-        if(arg->p1->speed >= 20){
-          if(isHit(arg->p1->posX, arg->p1->posY + 1, arg->p1->rotasi,arg->p1) == 0)
+          for (int px = 0; px < 4; px++)
+            for (int py = 0; py < 4; py++)
+              if (tetromino[arg->p1->tetris][indexRotasi(arg->p1->rotasi,px, py)] != '.')
+                    arg->p1->playField->screen[(arg->p1->posY + py) * pW + (arg->p1->posX + px)] = arg->p1->curBalok+1;
+                    
+          int penuh = 1;
+          for(int i = 0;i<4;++i)
           {
-            arg->p1->speed = 0;
-            arg->p1->posY++;
-            clearTrail(arg->p1->posX, (arg->p1->posY-1),arg->p1);
+            if(arg->p1->posY + i < pH - 1)
+            {
+              penuh = 1;
+              for(int j = 1;j<pW-1;++j)
+              {
+                penuh &= (arg->p1->playField->screen[(arg->p1->posY+i)*pW+j] != 0);
+              }
+              if(penuh)
+              {
+                for(int j = 1;j<pW-1;++j)
+                {
+                  arg->p1->playField->screen[(arg->p1->posY+i)*pW+j] = 8;
+                }
+                enqueue(arg->p1->posY + i, &garisPenuh);
+              }
+            }
+          }
+          arg->p1->speed = 0;
+          if(arg->p1->curBalok + 1 == 7)
+          {
+            arg->p1->curBalok +=4;
           }
           else
           {
-            for (int px = 0; px < 4; px++)
-              for (int py = 0; py < 4; py++)
-                if (tetromino[arg->p1->tetris][indexRotasi(arg->p1->rotasi,px, py)] != L'.')
-                      arg->p1->playField->screen[(arg->p1->posY + py) * pW + (arg->p1->posX + px)] = arg->p1->curBalok+1;
             arg->p1->curBalok+=1;
-            arg->p1->curBalok%=7;
-            arg->p1->score += 25;
-            arg->p1->posX = pW/2;
-            arg->p1->posY = 0;
-            arg->p1->rotasi  = 0;
-            arg->p1->tetris = rand()%7;
           }
-          // printf("awpodikpaowdka\n");
+          arg->p1->score += 25;
+          if(penuh)
+          {
+            arg->p1->score += 1 << garisPenuh.size * 100;
+            arg->p2->health -= (1 << garisPenuh.size/ 100 * arg->p1->score/ 100) * garisPenuh.size;
+          }
+          arg->p1->posX = pW/2;
+          arg->p1->posY = 0;
+          arg->p1->rotasi  = 0;
+          arg->p1->tetris = rand()%7;
         }
-        break;
-    }
-    
-    arg->p1->posX %= pW;
-    arg->p1->posY %= pH;
-    arg->p1->speed++;
-  // int px, py;
-  // printf("%d\n",arg->p1->posY);
-  // // printf("%d\n",isHit(*arg->p1));
-  // for(py = 0;py < 4;++py)
-  // {
-  //     for(px = 0;px < 4;++px)
-  //     {
-  //         //getIndex(x,y);
-  //         arg->p1->playField->screen[getIndex((px  + arg->p1->posX)%arg->p1->playField->width, (py+arg->p1->posY-1)%(arg->p1->playField->height-1),*(arg->p1->playField))] = '.';
-  //         // screen.screen[getIndex(px  + p2.posX, (py+yTest)%(screen.height+5),screen)] = '.';
-  //         // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = '.';
-  //     }
-  // }
-  // if(arg->p1->speed>=20){
-  //   arg->p1->speed = 0;
-  //   arg->p1->posY = (arg->p1->posY + 1)% pH;
-  // }
-  // if(arg->p1->posY % (arg->p1->playField->height-2)==0 && arg->p1->posY != 0){
-  //   arg->p1->tetris = rand()%7;
-  // }
-  // for(py = 0;py < 4;++py)
-  // {
-  //     for(px = 0;px < 4;++px)
-  //     {
-  //         if(tetromino[arg->p1->tetris][indexRotasi(arg->p1->rotasi,px,py)] != '.')
-  //         {
-  //             arg->p1->playField->screen[getIndex((px + arg->p1->posX)%arg->p1->playField->width, (py+arg->p1->posY)%(arg->p1->playField->height-1),*(arg->p1->playField))] = 'T';
-  //             // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
-  //         }
-  //     }
-  // }
-  // arg->p1->speed++;
+        // printf("awpodikpaowdka\n");
+      }
+      break;
+  }
+  if(garisPenuh.size){
+    for(int i = 0 ; i < garisPenuh.size;++i)
+    {
+     int v = dequeue(&garisPenuh);
+     for(int j = 1; j < pW -1 ; ++j)
+     {
+       for(int py = v; py > 0; py--)
+       { 
+        arg->p1->playField->screen[py * pW + j] = arg->p1->playField->screen[(py-1) * pW + j];
+       }
+       arg->p1->playField->screen[j] = 0;
+     }
+   } 
+  }
+  arg->p1->posX %= pW;
+  arg->p1->posY %= pH;
+  arg->p1->speed++;
   pthread_mutex_unlock(&p1Lock);
-  pthread_exit(0);
+  pthread_exit(NULL);
 }
 void *UPDATEP2(void *args)
 {
-  struct updateArg *arg = args;
   pthread_mutex_init(&p2Lock,NULL);
+  struct updateArg *arg = args;
+  queue garisPenuh;
   pthread_mutex_lock(&p2Lock);
   switch(inputan){
     case KEY_I:
       arg->p2->code = inputan;
-      if(isHit(arg->p2->posX, arg->p2->posY, arg->p2->rotasi+1,arg->p2) == 0)
+      //isHit(x,y,rotasi,player)
+      int kick = 0, kick2 = 0;
+      if(isHitRotasi(0,0,arg->p2->rotasi+1,arg->p2))
       {
-        arg->p2->rotasi+=1;
+        if(arg->p2->posX >= 0 && arg->p2->posX < pW/2)
+        {
+          kick = 1;
+        }
+        else if(arg->p2->posX >=pW/2 && arg->p2->posX <= pW-1)
+        {
+          kick = -1;
+        }
         clearTrail(arg->p2->posX, arg->p2->posY,arg->p2);
       }
-      // arg->p2->rotasi += (!isHit(arg->p2->posX, arg->p2->posY, arg->p2->rotasi+1,arg->p2))? 0 : 1;
+      if(isHitRotasi(kick,0,arg->p2->rotasi+1,arg->p2) == 0)
+      {
+        arg->p2->posX += kick;
+        arg->p2->rotasi +=1;
+      }
       break;
     case KEY_K:
       arg->p2->code = inputan;
-      if(isHit(arg->p2->posX, arg->p2->posY+1, arg->p2->rotasi,arg->p2) == 0)
+      if(isHit(0,1, arg->p2->rotasi,arg->p2) == 0)
       {
         arg->p2->posY+=1;
         clearTrail(arg->p2->posX, arg->p2->posY-1,arg->p2);
@@ -441,7 +490,7 @@ void *UPDATEP2(void *args)
       break;
     case KEY_J:
       arg->p2->code = inputan;
-      if(isHit(arg->p2->posX-1, arg->p2->posY, arg->p2->rotasi,arg->p2) == 0)
+      if(isHit(-1,0, arg->p2->rotasi,arg->p2) == 0)
       {
         arg->p2->posX-=1;
         clearTrail(arg->p2->posX+1, arg->p2->posY,arg->p2);
@@ -450,7 +499,7 @@ void *UPDATEP2(void *args)
       break;
     case KEY_L:
       arg->p2->code = inputan;
-      if(isHit(arg->p2->posX+1, arg->p2->posY, arg->p2->rotasi,arg->p2) == 0)
+      if(isHit(1, 0, arg->p2->rotasi,arg->p2) == 0)
       {
         arg->p2->posX +=1;
         clearTrail(arg->p2->posX-1, arg->p2->posY,arg->p2);
@@ -458,113 +507,85 @@ void *UPDATEP2(void *args)
       // arg->p2->posX += (!isHit(arg->p2->posX+1, arg->p2->posY, arg->p2->rotasi,arg->p2))? 0 : 1;
       break;
     default:
-      if(arg->p2->speed >= 20 && isHit(arg->p2->posX, arg->p2->posY + 1, arg->p2->rotasi,arg->p2) == 0){
-        arg->p2->speed = 0;
-        arg->p2->posY++;
-        clearTrail(arg->p2->posX, (arg->p2->posY-1),arg->p2);
+      if(arg->p2->speed >= 20){
+        if(isHit(0, 1, arg->p2->rotasi,arg->p2) == 0)
+        {
+          arg->p2->speed = 0;
+          arg->p2->posY++;
+          clearTrail(arg->p2->posX, (arg->p2->posY-1),arg->p2);
+        }
+        else
+        {
+          // Tumpuk balok tetris
+          for (int px = 0; px < 4; px++)
+            for (int py = 0; py < 4; py++)
+              if (tetromino[arg->p2->tetris][indexRotasi(arg->p2->rotasi,px, py)] != '.')
+                    arg->p2->playField->screen[(arg->p2->posY + py) * pW + (arg->p2->posX + px)] = arg->p2->curBalok+1;
+          // Check lines
+
+          int penuh = 1;
+          
+          createEmpty(&garisPenuh);
+          for(int i = 0;i<4;++i)
+          {
+            if(arg->p2->posY + i < pH - 1)
+            {
+              penuh = 1;
+              for(int j = 1;j<pW-1;++j)
+              {
+                penuh &= (arg->p2->playField->screen[(arg->p2->posY+i)*pW+j] != 0);
+              }
+              if(penuh)
+              {
+                for(int j = 1;j<pW-1;++j)
+                {
+                  arg->p2->playField->screen[(arg->p2->posY+i)*pW+j] = 8;
+                }
+                enqueue(arg->p2->posY + i, &garisPenuh);
+              }
+            }
+          }
+          arg->p2->speed = 0;
+          if(arg->p2->curBalok + 1 == 7)
+          {
+            arg->p2->curBalok +=4;
+          }
+          else
+          {
+            arg->p2->curBalok+=1;
+          }
+          arg->p2->score += 25;
+          if(penuh)
+          {
+            arg->p2->score += 1 << garisPenuh.size * 100;
+            arg->p1->health -= (1 << garisPenuh.size/ 100 * arg->p2->score/ 100) * 2 * garisPenuh.size;
+          }
+          arg->p2->posX = pW/2;
+          arg->p2->posY = 0;
+          arg->p2->rotasi  = 0;
+          arg->p2->tetris = rand()%7;
+        }
         // printf("awpodikpaowdka\n");
       }
       break;
   }
-  
+  if(garisPenuh.size){
+   for(int i = 0 ; i < garisPenuh.size;++i)
+   {
+     int v = dequeue(&garisPenuh);
+     for(int j = 1; j < pW -1 ; ++j)
+     {
+       for(int py = v; py > 0; py--)
+       { 
+        arg->p2->playField->screen[py * pW + j] = arg->p2->playField->screen[(py-1) * pW + j];
+       }
+       arg->p2->playField->screen[j] = 0;
+     }
+   } 
+  }
   arg->p2->posX %= pW;
   arg->p2->posY %= pH;
   arg->p2->speed++;
   pthread_mutex_unlock(&p2Lock);
-  pthread_exit(0);
-}
-
-void* UPDATE(void *args)
-{
-  struct updateArg *arg = args;
-  int p1X = arg->p1->posX % W;
-  int p1Y = arg->p1->posY % H;
-  if(p1X == arg->screen->width-1)
-    arg->screen->screen[p1Y * W + p1X] = '\n';
-  else
-    arg->screen->screen[p1Y * W + p1X] = '.';
-  int p2X = arg->p2->posX % W;
-  int p2Y = arg->p2->posY % H;
-  if(p2X == arg->screen->width-1)
-    arg->screen->screen[p2Y * W + p2X] = '\n';
-  else
-    arg->screen->screen[p2Y * W + p2X] = '.';
-  char key;
-  if(!isEmpty(keyBuffer))
-  {
-    key = dequeue(&keyBuffer);
-    switch(key)
-    {
-      case KEY_I:
-        arg->p2->code = key;
-        break;
-      case KEY_K:
-        arg->p2->code = key;
-        break;
-      case KEY_J:
-        arg->p2->code = key;
-        break;
-      case KEY_L:
-        arg->p2->code = key;
-        break;
-      default:
-        arg->p1->code = key;
-        break;
-    }
-  }
-  else
-  {
-    key = (char)KEY_NONE;
-  }
-  if(key == KEY_W)
-  {
-    arg->p1->posY--;
-  }
-  if(key == KEY_A) 
-  {
-    arg->p1->posX--;
-  }
-  if(key == KEY_S)
-  {
-    arg->p1->posY++;
-  }
-  if(key == KEY_D)
-  {
-    arg->p1->posX++;
-  }
-  if(key == KEY_I)
-  {
-    arg->p2->posY--;
-  }
-  if(key == KEY_J) 
-  {
-    arg->p2->posX--;
-  }
-  if(key == KEY_K)
-  {
-    arg->p2->posY++;
-  }
-  if(key == KEY_L)
-  {
-    arg->p2->posX++;
-  }
-
-  if(arg->event->code == KEY_Q)
-  {
-    return NULL;
-  }
-  p1X = arg->p1->posX % W;
-  p1Y = arg->p1->posY % H;
-  if(p1X == arg->screen->width-1)
-    arg->screen->screen[p1Y * W + p1X] = '\n';
-  // else
-  //   arg->screen->screen[p1Y * W + p1X] = '#';
-  p2X = arg->p2->posX % W;
-  p2Y = arg->p2->posY % H;
-  if(p1X == arg->screen->width-1)
-    arg->screen->screen[p2Y * W + p2X] = '\n';
-  // else
-  //   arg->screen->screen[p2Y * W + p2X] = '#';
-  arg->event->code = KEY_NONE;
-  // p2.code = KEY_NONE;
+  pthread_exit(NULL);
 }

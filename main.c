@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
         pthread_t tid0;
         pthread_t tid1;
         pthread_t tid2;
+        pthread_t tid3;
 
 //============================PLAYER===================================
         // Player 1
@@ -83,8 +84,9 @@ int main(int argc, char *argv[])
         strcpy(tetromino[5],".X...X...XX.....");
         strcpy(tetromino[6],"..X...X..XX.....");
         int speed = 0;
+        int gameOver = 0;
 //============================GAME LOOP=================================
-        while(gameLoop && evArg.event->code != KEY_Q)
+        while(gameLoop)
         {
             //Game timing================
             clock_gettime(CLOCK_MONOTONIC,&end);
@@ -94,6 +96,7 @@ int main(int argc, char *argv[])
                 clear();
                 // system("clear");
                 // gotoxy(0,0);
+                
                 printf("Frametime : %ld ms FPS : %g\n",delta,(double)frames/delta);
                 printf("TEST USER INPUT\n");
                 printf("P1 : %c P2:%c\n",p1.code + 65, p2.code+65);
@@ -104,78 +107,52 @@ int main(int argc, char *argv[])
                 else{
                     inputan = KEY_NONE;
                 }
+                if(inputan == KEY_Q)
+                {
+                    gameLoop = 0;
+                }
                 // UPDATE(&arg);
                 pthread_create(&tid1,NULL,UPDATEP1,&arg);
                 pthread_create(&tid2,NULL,UPDATEP2,&arg);
                 pthread_join(tid1,NULL);
                 pthread_join(tid2,NULL);
-                // Test unit tetris dan kecepatan turunnya
-                // int px, py;
-                // for(py = 0;py < 4;++py)
-                // {
-                //     for(px = 0;px < 4;++px)
-                //     {
-                //         //getIndex(x,y);
-                //         screen.screen[getIndex(px  + p1.posX, (py+yTest)%(screen.height+5),screen)] = '-';
-                //         screen.screen[getIndex(px  + p2.posX, (py+yTest)%(screen.height+5),screen)] = '-';
-                //         // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = '-';
-                //     }
-                // }
-                
-                // int currentPiece,currentPiece2;
-                // printf("%d\n",yTest % screen.height);
-
-                // if(yTest %16 == 0 && yTest != 0)
-                // {
-                //     currentPiece = rand()%7;
-                //     currentPiece2 = rand()%7;
-                // }
-                // if(speed >=20)
-                // {
-                //     speed =0;
-                //     yTest++;
-                //     yTest %= screen.height + 5;
-                // }
-                // // int currentPiece = rand()%5;
-                // for(py = 0;py < 4;++py)
-                // {
-                //     for(px = 0;px < 4;++px)
-                //     {
-                //         if(tetromino[currentPiece][(py)*4+px] != '.')
-                //         {
-                //             screen.screen[getIndex(px + p1.posX, (py+yTest)%(screen.height+5),screen)] = 'T';
-                //             // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
-                //         }
-                //         if(tetromino[currentPiece2][(py)*4+px] != '.')
-                //         {
-                //             screen.screen[getIndex(px + p2.posX, (py+yTest)%(screen.height+5),screen)] = 'G';
-                //             // screen.screen[((py+yTest+2)%screen.height) * screen.width + (px + W/2)] = 'T';
-                //         }
-                //     }
-                // }
                 // Render screen ke terminal
                 printf("=====================Player 1=====================\n");
                 printf("  W = Atas || S = Bawah || A = Kiri || D = Kanan\n");
                 printf("=====================Player 2=====================\n");
                 printf("  I = Atas || K = Bawah || J = Kiri || L = Kanan\n");
                 printf("==================================================\n");
-                DRAW(&p1,&p2,&screen,tetromino);
+                struct drawArg drawArg;
+                drawArg.p1 = &p1;
+                drawArg.p2 = &p2;
+                drawArg.screen = &screen;
+                drawArg.tetromino = tetromino;
+                pthread_create(&tid3, NULL,DRAW,&drawArg);
+                pthread_join(tid3,NULL);
+                // DRAW(&p1,&p2,&screen,tetromino);
 
                 start = end;
                 speed++;
                 frames = 0;
+                // gameOver = p1.gameOver || p2.gameOver;
+                // if(gameOver){
+                //     gameLoop = 0;
+                // }
             }
             ++frames;
         }
         pthread_join(tid0,NULL);
         clear();
         // printf("Program is done\n%d\n",evArg.event->code);
+        printf("Terima kasih sudah mencoba!\n");
         tcsetattr(STDIN_FILENO,TCSANOW,&old);
+        exit(0);
     }
     else
     {
         clear();
         printf("Terima kasih sudah mencoba!\n");
     }
+    pthread_exit(NULL);
     return 0;
 }

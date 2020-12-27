@@ -2,6 +2,7 @@
 void createEmpty(queue *Q){
   (*Q).first = NULL;
   (*Q).last = NULL;
+  Q->size = 0;
 }
 
 int isEmpty(queue Q){
@@ -24,6 +25,7 @@ void enqueue(char input, queue *Q ){
     (*Q).last->next = baru;
   }
   (*Q).last = baru;
+  Q->size++;
   baru = NULL;
 }
 
@@ -41,5 +43,6 @@ char dequeue(queue *Q)
         Q->first = Q->first->next;
         free(tmp);
     }
+    Q->size--;
     return ans;
 }

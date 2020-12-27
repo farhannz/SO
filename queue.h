@@ -8,6 +8,7 @@ typedef struct elm{
   struct elm *next;
 }elemen;
 typedef struct{
+  int size;
   elemen *first;
   elemen *last;
 }queue;
