@@ -157,9 +157,9 @@ int main(int argc, char *argv[])
             printf("=====================================================\n");
             printf("\nPencet Q, untuk keluar dari game!\n");
         }
-        printf("Anda telah keluar dari permainan!\n");
         pthread_join(tid0,NULL);
         clear();
+        printf("Anda telah keluar dari permainan!\n");
         tcsetattr(STDIN_FILENO,TCSANOW,&old);
         exit(0);
     }
