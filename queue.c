@@ -7,7 +7,7 @@ void createEmpty(queue *Q){
 
 int isEmpty(queue Q){
   int hasil = 0;
-  if(Q.first == NULL){
+  if(Q.first == NULL || Q.first == 0x1){
     hasil = 1;
   }
   return hasil;
@@ -18,7 +18,7 @@ void enqueue(char input, queue *Q ){
   baru = (elemen *) malloc (sizeof (elemen));
   baru->data = input;
   baru->next = NULL;
-  if((*Q).first == NULL){
+  if((*Q).first == NULL || Q->first == 0x1){
     (*Q).first = baru;
   }
   else{
@@ -32,17 +32,18 @@ void enqueue(char input, queue *Q ){
 char dequeue(queue *Q)
 {
     char ans;
-    if (Q->first == NULL)
+    elemen *tmp = (elemen*)malloc(sizeof(elemen));
+    if (Q->first == NULL || Q->first == 0x1)
     {
-        printf("\n\nqueue is empty \n");
+        Q->size = 0;
     }
     else
     {
-        elemen *tmp = Q->first;
+        tmp = Q->first;
         ans = tmp->data;
         Q->first = Q->first->next;
+        Q->size--;
         free(tmp);
     }
-    Q->size--;
     return ans;
 }
