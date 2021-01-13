@@ -75,7 +75,7 @@ void * GetInputFromUser(void *args)
   }
   // pthread_mutex_unlock(&mutex);
   // int x;
-  // pthread_exit(&x);
+  // pthread_exit(NULL);
 }
 int getIndex(int x, int y, struct winScreen screen)
 {
@@ -300,14 +300,17 @@ void drawHealth(struct player player,int coorX,int coorY,struct winScreen *scree
 void *DRAW(void* args)
 {
   struct drawArg *arg = args;
+  // BAKAL MASUK LANGSUNG KE DALEM GAME SCREEN
   drawField(arg->p1, 2,3,arg->screen);
   drawField(arg->p2, 50,3,arg->screen);
   drawScore(*arg->p1,20,5,arg->screen);
   drawScore(*arg->p2,20,8,arg->screen);
   drawHealth(*arg->p1,1,2,arg->screen);
   drawHealth(*arg->p2,49,2,arg->screen);
+  // BAKAL MASUK KE DALAM PLAYER FIELD
   drawPieces(arg->p1,arg->screen);
   drawPieces(arg->p2,arg->screen);
+  // NGERENDER KE TERMINAL
   fprintf(stderr,"%s",arg->screen->screen);
   // fflush(stderr);
   pthread_exit(NULL);
@@ -418,13 +421,14 @@ void *UPDATEP1(void *args)
           arg->p1->score += 25;
           if(penuh)
           {
-            arg->p1->score += 1 << garisPenuh.size * 100;
-            arg->p2->health -= (1 << garisPenuh.size/ 100 * arg->p1->score/ 100) * garisPenuh.size;
+            arg->p1->score += 100;
+            arg->p2->health -= 5;
           }
+          arg->p1->tetris = rand()%7;
           arg->p1->posX = pW/2;
           arg->p1->posY = 0;
           arg->p1->rotasi  = 0;
-          arg->p1->tetris = rand()%7;
+          arg->p1->gameOver = (isHit(0,0,arg->p1->rotasi,arg->p1) || arg->p1->health <= 0);
         }
         // printf("awpodikpaowdka\n");
       }
@@ -557,13 +561,14 @@ void *UPDATEP2(void *args)
           arg->p2->score += 25;
           if(penuh)
           {
-            arg->p2->score += 1 << garisPenuh.size * 100;
-            arg->p1->health -= (1 << garisPenuh.size/ 100 * arg->p2->score/ 100) * 2 * garisPenuh.size;
+            arg->p2->score += 100;
+            arg->p1->health -= 5;
           }
+          arg->p2->tetris = rand()%7;
           arg->p2->posX = pW/2;
           arg->p2->posY = 0;
           arg->p2->rotasi  = 0;
-          arg->p2->tetris = rand()%7;
+          arg->p2->gameOver = (isHit(0,0,arg->p2->rotasi,arg->p2) || arg->p2->health <= 0);
         }
         // printf("awpodikpaowdka\n");
       }

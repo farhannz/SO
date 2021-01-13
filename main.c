@@ -4,6 +4,7 @@ int yTest = 0;
 struct player p1,p2;
 char scan;
 char tetromino[7][17];
+
 int main(int argc, char *argv[])
 {
 //=====================================================================
@@ -23,6 +24,7 @@ int main(int argc, char *argv[])
     printf("   Apakah kamu ingin bermain? Y/T\n");
     scan = inputKey();
     scan = (scan >= 97 && scan <=127) ? scan - 97 : scan - 65;
+    createEmpty(&keyBuffer);
 //=====================================================================
 
     if(scan == KEY_Y){
@@ -64,7 +66,6 @@ int main(int argc, char *argv[])
         createScreen(H,W, &screen);
         createScreen(pH,pW, &playField1);
         createScreen(pH,pW, &playField2);
-        createEmpty(&keyBuffer);
         struct updateArg arg,arg2;
         // User Input Loop();
         pthread_create(&tid0,NULL,GetInputFromUser,(void *) &evArg);
@@ -97,9 +98,10 @@ int main(int argc, char *argv[])
                 // system("clear");
                 // gotoxy(0,0);
                 
-                printf("Frametime : %ld ms FPS : %g\n",delta,(double)frames/delta);
-                printf("TEST USER INPUT\n");
-                printf("P1 : %c P2:%c\n",p1.code + 65, p2.code+65);
+                // printf("Frametime : %ld ms FPS : %g\n",delta,(double)frames/delta);
+                // printf("TEST USER INPUT\n");
+                // printf("P1 : %c P2:%c\n",p1.code + 65, p2.code+65);
+                printf("===================== Tetris Battle =======================\n");
                 if(!isEmpty(keyBuffer)){
                     inputan = dequeue(&keyBuffer);
                     ev.code = (inputan >= 97 && inputan <=127) ? inputan - 97 : inputan - 65;
@@ -107,21 +109,13 @@ int main(int argc, char *argv[])
                 else{
                     inputan = KEY_NONE;
                 }
-                if(inputan == KEY_Q)
-                {
-                    gameLoop = 0;
-                }
+                
                 // UPDATE(&arg);
                 pthread_create(&tid1,NULL,UPDATEP1,&arg);
                 pthread_create(&tid2,NULL,UPDATEP2,&arg);
                 pthread_join(tid1,NULL);
                 pthread_join(tid2,NULL);
                 // Render screen ke terminal
-                printf("=====================Player 1=====================\n");
-                printf("  W = Atas || S = Bawah || A = Kiri || D = Kanan\n");
-                printf("=====================Player 2=====================\n");
-                printf("  I = Atas || K = Bawah || J = Kiri || L = Kanan\n");
-                printf("==================================================\n");
                 struct drawArg drawArg;
                 drawArg.p1 = &p1;
                 drawArg.p2 = &p2;
@@ -129,22 +123,43 @@ int main(int argc, char *argv[])
                 drawArg.tetromino = tetromino;
                 pthread_create(&tid3, NULL,DRAW,&drawArg);
                 pthread_join(tid3,NULL);
+                printf("=====================Player 1=======================\n");
+                printf("  W = Rotasi || S = Bawah || A = Kiri || D = Kanan\n");
+                printf("=====================Player 2=======================\n");
+                printf("  I = Rotasi || K = Bawah || J = Kiri || L = Kanan\n");
+                printf("====================================================\n");
                 // DRAW(&p1,&p2,&screen,tetromino);
 
                 start = end;
                 speed++;
-                frames = 0;
-                // gameOver = p1.gameOver || p2.gameOver;
-                // if(gameOver){
-                //     gameLoop = 0;
-                // }
+                frames = 0;      
+                gameOver =  p1.gameOver || p2.gameOver;
+                if(inputan == KEY_Q || gameOver)
+                {
+                    gameLoop = 0;
+                    break;
+                }
             }
             ++frames;
         }
-        pthread_join(tid0,NULL);
         clear();
         // printf("Program is done\n%d\n",evArg.event->code);
-        printf("Terima kasih sudah mencoba!\n");
+        char pemenang = (p1.gameOver) ? '2' : '1';
+        char bufferScore[50];
+        sprintf(bufferScore,"Scores : %09d", (p1.gameOver) ? p2.score : p1.score);
+        if(gameOver)
+        {
+            printf("=====================GAME OVER=======================\n");
+            printf("=                                                   =\n");
+            printf("=                    PEMENANG :                     =\n");
+            printf("=                       P%c                          =\n",pemenang);
+            printf("=                %s                 =\n",bufferScore);
+            printf("=====================================================\n");
+            printf("\nPencet Q, untuk keluar dari game!\n");
+        }
+        printf("Anda telah keluar dari permainan!\n");
+        pthread_join(tid0,NULL);
+        clear();
         tcsetattr(STDIN_FILENO,TCSANOW,&old);
         exit(0);
     }
@@ -153,6 +168,5 @@ int main(int argc, char *argv[])
         clear();
         printf("Terima kasih sudah mencoba!\n");
     }
-    pthread_exit(NULL);
     return 0;
 }
