@@ -1,10 +1,11 @@
 # SO
-Kelompok 4:
-Farhan Nurzaman     (1904908)
-Hasna Naada Fida K  (1901189)
-Ilham Ramadhan      (1902369)
-Naufal Fasya F      (1905166)
-Yulian Putri C R    (1905110)
+Kelompok 4:  
+
+Farhan Nurzaman     (1904908)  
+Hasna Naada Fida K  (1901189)  
+Ilham Ramadhan      (1902369)  
+Naufal Fasya F      (1905166)  
+Yulian Putri C R    (1905110)  
 
 Repo tugas besar SO
 
