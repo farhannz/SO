@@ -11,8 +11,9 @@ Repo tugas besar SO
 
 Battle Tetris Multiplayer
 Tetris dengan 2 pemain yang melawan satu sama lain, setiap pemain yang sudah menyelesaikan satu baris dari tetris akan memberikan damage ke pemain lain
-yang menyebabkan health dari pemain lain tersebut berkurang.
+yang menyebabkan health dari pemain lain tersebut berkurang.  
 
+![alt text](https://github.com/farhannz/SO/raw/main/a.png)
 
 
 
